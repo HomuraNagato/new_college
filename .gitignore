@@ -1,0 +1,5 @@
+
+gravitational_wave/data/
+gravitational_wave/__pycache__/
+gravitational_wave/.ipynb_checkpoints
+*~
