@@ -1,0 +1,230 @@
+---
+title: "Summary of Tellenbach's Thesis defense 2012"
+author: "Charlie, Aaron, Nicole, Matt"
+date: "2017.11.14"
+output: 
+  ioslides_presentation:
+    incremental: true
+    widescreen: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Papers Contributions
+
+Analyse the robustness of entropy in the presence of packet sampling. Then characterize an outbreak of the Blaster and Witty worm. Suggets entropy with traffic leads to an improvement in the location of anomalies even in sampling rates up to 1:10,000. 
+
+Contributes 'Traffic Entropy Spectrum (TES)'. A method for the compact characterization and visualization of traffic feature distributions, with refinement towards anomaly classification. Also provide an Entropy Telescope that automates anomaly detection. 
+
+TES outperforms classical Shannon entropy by up to 20% in detection accuracy and 27% in classification accuracy.
+
+## Introduction
+
+Definition of anomaly detection systems - A proactive method that works by defining what 'normal behavior' of a given system is. Any deviation from this model is assumed to be an aberrance caused by an external danger.
+
+Common Metrics modelled are volume traffic or entropy.
+
+## Anomaly Definition
+
+Generic definition of anomalies 
+
+- A rare or infrequent event with a frequency below a certain threshold
+    + Black or Grey swan
+- An unexpected result
+- A deviation from a normal form or rule
+- A state outside the usual range of variations
+
+## Anomaly Definition
+
+Generic definition of anomalies 
+
+> - A rare or infrequent event with a frequency below a certain threshold
+>    + Black or Grey swan
+> - An unexpected result
+> - A deviation from a normal form or rule
+> - A state outside the usual range of variations
+
+Some examples of anomalies
+
+- A massive DDoS attack
+- a network sensor reporting incorrect information
+- a host not following a given communication protocol
+- network bandwith being used at 12:00am twice as high as the maximum seen in the last seven days
+
+
+## Entropy analysis claims
+
+1. Reduces the amount of information needed to be kept when characterising changes in a distribution
+
+2. Allows for compact visualization of such changes
+
+3. Entropy features are robust in identifying anomalies in random packet sampling. 
+
+## Entropy - Shannon
+
+\[
+  S_s (X) = - \sum_{i=1}^n p_i log_2 (p_i)
+\]
+
+\[
+  p(x_i) = \frac{a_i}{\sum_{j=1}^n a_j}
+\]
+
+$X$ is a random variable over a range of values $\{x_1,x_2,\dots,x_n\}$ with $p(x_i)=p(X=x_i)$. $a_i$ is the activity of $x_i$ in that time window. 
+
+For example, the Shannon entropy of a source IP address distribution would refer to the number of occurrences of IP address $x_i$.
+
+Can be seen as a logarithm moment, as it is the expectation of the logarithm of the measure (with a minus sign to get a positive quantity)
+
+## Entropy - Tsallis
+
+\[
+  S_q (X) = \frac{1}{q-1}(1 - \sum_{i=1}^n p(x_i)^q)
+\]
+
+$X$ and $p(x_i)$ are the same as in Shannon
+
+$q$ is a parameter specific to the Tsallis entropy. For $q \rightarrow 1$, $S_q$ recovers the Shannon entropy. For $q=0$, it corresponds to $n-1$. 
+
+## Entropy - Tsallis
+
+Tellenbach uses Tsallis entropy in an operational sense to measure whether a distribution is concentrated or dispersed. Can use Tsallis entropy to concentrate on different regions of the distribution.
+
+Consider a time window $T$ where we observe that IP address A was a source of 1000 connections and IP address B was a source of 10 connections, with 2000 total observed connections. If we choose $q=2$, the Tsallis entropy for A is $p_A^2=0.25$ and B is $p_B^2=0.000025$. If $q=-2$, then A is $p_A^{-2}=4$ and B is $p_A^{-2}=40000$. 
+
+Thus can highlight anomalies that we see often, occasionally, or rarely, in a specific time interval. The main advantage of this filter-like property is that changes which affect only parts of the distribution are pronounced, and there is more detailed information for the classification of different anomalies.
+
+## Packet Sampling
+
+* Packet Sampling is an inherently lossy process
+* Sampled traffic is incomplete and offers a biased approximation of the underlying traffic trace as small flows may be missed entirely.
+
+## Packet Sampling Evaluation
+
+Tellenbach collected flow records during the Blaster and Witty worm outbreak. Tellenbach simulates packet sampling at increasing rates. Use knowledge of the Blaster anomaly to build a baseline of normal traffic. Can then evaluate the impact of packet sampling on anomaly detection. 
+
+Find anomalies that impact packet and byte volume will stand out even in sampled traffic. 
+
+Next find entropy metrics are relatively undisturbed by packet sampling, even at a sampling rate of 1:10,000 packets. 
+
+## Baseline 
+
+Blaster anomaly identified as all TCP packets with destination port 135 and packet sizes 40, 44, or 48.
+
+Witty anomaly identified as all UDP packets between 796 and 1307 bytes to source port 4000.
+
+Even in unsampled data, Blaster-type anomalies represent a small fraction of packets (less than 1% in their trace). 
+
+## Impact of sampling in traffic mix
+
+* anomalous traffic is not in baseline traffic. Looking at the number of unique source IP addresses, visibility in an anomaly increases if the number in the baseline traffic decreases faster than the number in the anomalous traffic. Should see an increase in anomaly's visibility up to a certain sampling rate.
+* Anomalous traffic and baseline traffic are identical. Anomaly is not visible in unsampled traffic. With sampling, the anomaly should become visible. Due to the traffic in baseline decreasing faster than the anomalous traffic. 
+* Mix of baseline and anomalous traffic. A union of the previous scenarios with visibility of anomalies increasing under the right conditions. 
+
+
+## Sampling increasing visibility
+
+<center><img src="images/Tellenbach 3_6.png" height="450pt" /></center>
+
+Observe Router 4 sampling boosted anomaly visibility. This is the share of anomalous $S_a$ to baseline flows $S_b$ ratio increased. $\frac{S_a}{S_b}$
+
+However if we are unluckly, sampling we might not see an anomaly until it consists of more than the total number of packets minus the number of sampled packets. Is this saying we sample out the anomaly?
+
+## TES snapshot for Blaster anomaly
+
+<center><img src="images/Tellenbach 5_9.png" height="450pt" /></center>
+
+
+Because Blaster anomaly targets destination port 135, should see a decrease in entropy. 
+
+## Normalization
+
+* Global normalization using max and min
+* Normalization during a training period (single day)
+* Normalization using the interquartile range
+
+## Normalization - Interquartile Range 
+
+\[
+  (Q_1 - k*IQR, Q_3 + k*IQR)
+\]
+
+For some constant $k$. $IQR=Q_3-Q_1$.
+
+Asses whether changes stay within the variations of the training day. 
+
+## Motivation for $TES_p$
+
+Wish to find the relative difference of two Tsallis entropies in the intervals $T_n$ and $T_{n+1}$. 
+
+\[
+  \frac{S_q (X_{T_{n+1}}) - S_q (X_{T_{n}})}{S_q (X_{T_{n}})}
+\]
+
+Find this change has a strong impact on both the entropy values for positive AND negative $q$-values. This is due to an increase in overall activity, caused by a host in high activity region, leads to a decrease in the sample probabilities in low activity region, which in turn leads to a significant increase in entropy for $q<-0.5$.
+
+## the pruned TES
+
+For each time interval, calculate the TES for a set of $q$-values. Then zoom in on the elements most responsible for $p$ percentage of the value of $S_q$ for a given $q$. Next, calculate the pruned entropy for the selected elements only, denoted $S_{q,p}$. This ensures elements that contribute almost nothing have no impact on the final entropy calculation through either direct contribution or through normalization. 
+
+Note $TES_{100}$ corresponds to original TES. 
+
+## Entropy Telescope
+
+Parts
+
+* Wide Angle Lenses
+* Zoom Lenses
+* Image Processors
+* Scene Classifier
+
+## Wide Angle Lenses
+
+Capture the big picture to inform the Zoom Lense which regions to focus on. Calculates TES.
+
+## Zoom Lense
+
+Calculates $TES_p$. used $p:80,95,99$.
+
+## Image Processing - Anomaly detection
+
+Use various tools for anomaly detection
+
+- Kalman filter
+- Principal Component Analysis (PCA)
+- Karhunen-Louve Expansion (KLE)
+
+## Image Processing - Anomaly detection
+
+Use various tools for anomaly detection
+
+> - Kalman filter
+> - Principal Component Analysis (PCA)
+> - Karhunen-Louve Expansion (KLE)
+
+Use IQR to detect outliers
+
+\[
+  A(x) := \left\{ \begin{array}{ll}
+    \frac{x-(Q_3 + IQR)}{3 IQR} & \text{if} \quad x > Q_3 + IQR \\
+    \frac{x-(Q_1 - IQR)}{3 IQR} & \text{if} \quad x < Q_1 - IQR \\
+    0 & \text{else (signal is normal)}
+    \end{array}
+  \right.
+\]
+
+## Scene classifier
+
+Feeds discretized spectrum patterns- $A(x)$ - to a support vector machine (SVM) trained with different training sets with 3-fold cross-validation. The output of the SVM - the label of the anomaly, is the final result and output of the Entropy telescope.
+
+
+## Base anomaly classification matrix
+
+<center><img src="images/Tellenbach 6_5.png" height="450pt" /></center>
+
+See TES improves classification over Shannon entopy.
+
+
+
